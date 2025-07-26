@@ -10,6 +10,8 @@ import base64
 import io
 import json
 import sys
+import re
+from typing import List
 
 try:
     import soundfile as sf
@@ -18,6 +20,109 @@ except ImportError:
 
 # Global engine cache to avoid reloading
 _engine_cache = {}
+
+class HiggsAudioTextChunker:
+    """Text chunker optimized for HiggsAudio2 with 2000 token limit"""
+    
+    @staticmethod
+    def count_tokens_approximate(text: str) -> int:
+        """Approximate token count (roughly 4 characters per token for English)"""
+        return len(text) // 4
+    
+    @staticmethod 
+    def split_into_sentences(text: str, max_tokens: int = 2000) -> List[str]:
+        """
+        Split text into sentence-based chunks that fit within token limit.
+        """
+        if not text.strip():
+            return []
+        
+        # Clean and normalize text
+        text = re.sub(r'\s+', ' ', text.strip())
+        
+        # Check if text is already within limit
+        if HiggsAudioTextChunker.count_tokens_approximate(text) <= max_tokens:
+            return [text]
+        
+        # Split into sentences using robust regex
+        sentences = re.split(r'(?<=[.!?])\s+', text)
+        
+        chunks = []
+        current_chunk = ""
+        
+        for sentence in sentences:
+            sentence = sentence.strip()
+            if not sentence:
+                continue
+            
+            # Test if adding this sentence exceeds the token limit
+            test_chunk = current_chunk + " " + sentence if current_chunk else sentence
+            test_tokens = HiggsAudioTextChunker.count_tokens_approximate(test_chunk)
+            
+            if test_tokens <= max_tokens:
+                # Safe to add this sentence
+                current_chunk = test_chunk
+            else:
+                # Adding this sentence would exceed limit
+                if current_chunk:
+                    # Save current chunk and start new one
+                    chunks.append(current_chunk.strip())
+                    current_chunk = sentence
+                else:
+                    # Single sentence is too long - split it further
+                    if HiggsAudioTextChunker.count_tokens_approximate(sentence) > max_tokens:
+                        # Split long sentence by commas or semicolons
+                        parts = re.split(r'(?<=[,;])\s+', sentence)
+                        sub_chunk = ""
+                        
+                        for part in parts:
+                            test_part = sub_chunk + " " + part if sub_chunk else part
+                            if HiggsAudioTextChunker.count_tokens_approximate(test_part) <= max_tokens:
+                                sub_chunk = test_part
+                            else:
+                                if sub_chunk:
+                                    chunks.append(sub_chunk.strip())
+                                sub_chunk = part
+                        
+                        if sub_chunk:
+                            current_chunk = sub_chunk
+                    else:
+                        current_chunk = sentence
+        
+        # Add final chunk
+        if current_chunk.strip():
+            chunks.append(current_chunk.strip())
+        
+        return chunks
+    
+    @staticmethod
+    def combine_audio_chunks(audio_segments: List[dict], silence_ms: int = 100) -> dict:
+        """Combine multiple audio segments with optional silence padding"""
+        if len(audio_segments) == 1:
+            return audio_segments[0]
+        
+        combined_waveform = audio_segments[0]["waveform"]
+        sample_rate = audio_segments[0]["sample_rate"]
+        
+        # Calculate silence samples
+        silence_samples = int(silence_ms * sample_rate / 1000)
+        
+        for i in range(1, len(audio_segments)):
+            # Add silence between segments
+            if silence_ms > 0:
+                silence_shape = list(combined_waveform.shape)
+                silence_shape[-1] = silence_samples
+                silence = torch.zeros(*silence_shape)
+                combined_waveform = torch.cat([combined_waveform, silence], dim=-1)
+            
+            # Add next audio segment
+            next_waveform = audio_segments[i]["waveform"]
+            combined_waveform = torch.cat([combined_waveform, next_waveform], dim=-1)
+        
+        return {
+            "waveform": combined_waveform,
+            "sample_rate": sample_rate
+        }
 
 def load_voice_presets():
     """Load the voice presets from the voice_examples directory."""
@@ -161,15 +266,26 @@ class HiggsAudio:
                 "reference_audio": ("AUDIO",),
                 "reference_text": ("STRING", {"default": "", "multiline": True}),
                 "audio_priority": (["preset_dropdown", "reference_input", "auto", "force_preset"], {"default": "auto"}),
+                # CHUNKING CONTROLS
+                "enable_chunking": ("BOOLEAN", {"default": True}),
+                "max_tokens_per_chunk": ("INT", {"default": 2000, "min": 500, "max": 4000, "step": 100}),
+                "silence_between_chunks_ms": ("INT", {"default": 100, "min": 0, "max": 500, "step": 25}),
             }
         }
 
     RETURN_TYPES = ("AUDIO", "STRING")
-    RETURN_NAMES = ("output", "used_voice_info")
+    RETURN_NAMES = ("output", "generation_info")
     FUNCTION = "generate"
     CATEGORY = "Higgs Audio"
+    
+    def __init__(self):
+        self.chunker = HiggsAudioTextChunker()
 
-    def generate(self, MODEL_PATH, AUDIO_TOKENIZER_PATH, system_prompt, prompt, max_new_tokens, temperature, top_p, top_k, device, voice_preset="voice_clone", reference_audio=None, reference_text="", audio_priority="auto"):
+    def process_single_chunk(self, chunk_text, MODEL_PATH, AUDIO_TOKENIZER_PATH, system_prompt, 
+                           max_new_tokens, temperature, top_p, top_k, device, 
+                           voice_preset, reference_audio, reference_text, audio_priority):
+        """Process a single text chunk through HiggsAudio"""
+        
         # Determine device
         if device == "auto":
             device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -276,11 +392,10 @@ class HiggsAudio:
                 print(f"Error in audio processing: {e}")
                 used_voice_info = f"Audio processing error: {str(e)}"
         
-        # Add the main user message
-        messages.append(Message(role="user", content=prompt))
+        # Add the chunk text as user message
+        messages.append(Message(role="user", content=chunk_text))
         
-        print(f"Generating audio with HiggsAudio...")
-        start_time = time.time()
+        print(f"Generating audio chunk with HiggsAudio...")
         
         try:
             output: HiggsAudioResponse = serve_engine.generate(
@@ -295,9 +410,6 @@ class HiggsAudio:
             print(f"Error during audio generation: {e}")
             raise e
         
-        generation_time = time.time() - start_time
-        print(f"Audio generated in {generation_time:.2f} seconds")
-        
         # Convert to ComfyUI format
         if hasattr(output, 'audio') and hasattr(output, 'sampling_rate'):
             audio_np = output.audio
@@ -308,13 +420,80 @@ class HiggsAudio:
             else:
                 audio_tensor = torch.from_numpy(audio_np).float()
             
-            comfy_audio = {
+            chunk_audio = {
                 "waveform": audio_tensor,
                 "sample_rate": output.sampling_rate
             }
-            return (comfy_audio, used_voice_info)
+            return chunk_audio, used_voice_info
         else:
             raise ValueError("Invalid audio output from HiggsAudio engine")
+
+    def generate(self, MODEL_PATH, AUDIO_TOKENIZER_PATH, system_prompt, prompt, max_new_tokens, 
+                temperature, top_p, top_k, device, voice_preset="voice_clone", reference_audio=None, 
+                reference_text="", audio_priority="auto", enable_chunking=True, 
+                max_tokens_per_chunk=2000, silence_between_chunks_ms=100):
+        
+        # Handle None values for backward compatibility
+        if enable_chunking is None:
+            enable_chunking = True
+        if max_tokens_per_chunk is None or max_tokens_per_chunk < 500:
+            max_tokens_per_chunk = 2000
+        if silence_between_chunks_ms is None:
+            silence_between_chunks_ms = 100
+        
+        start_time = time.time()
+        
+        # Check if chunking is needed
+        prompt_tokens = self.chunker.count_tokens_approximate(prompt)
+        
+        if not enable_chunking or prompt_tokens <= max_tokens_per_chunk:
+            # Process as single chunk
+            print(f"Processing single chunk: {prompt_tokens} tokens")
+            chunk_audio, voice_info = self.process_single_chunk(
+                prompt, MODEL_PATH, AUDIO_TOKENIZER_PATH, system_prompt,
+                max_new_tokens, temperature, top_p, top_k, device,
+                voice_preset, reference_audio, reference_text, audio_priority
+            )
+            
+            generation_time = time.time() - start_time
+            info = f"Generated {chunk_audio['waveform'].size(-1) / chunk_audio['sample_rate']:.1f}s audio from {prompt_tokens} tokens (single chunk) in {generation_time:.2f}s"
+            
+            return (chunk_audio, info)
+        
+        else:
+            # Split into chunks
+            chunks = self.chunker.split_into_sentences(prompt, max_tokens_per_chunk)
+            print(f"Processing {len(chunks)} sentence-based chunks from {prompt_tokens} tokens")
+            print(f"Max tokens per chunk: {max_tokens_per_chunk}")
+            
+            # Process each chunk
+            audio_segments = []
+            total_chunk_tokens = 0
+            
+            for i, chunk in enumerate(chunks):
+                chunk_tokens = self.chunker.count_tokens_approximate(chunk)
+                total_chunk_tokens += chunk_tokens
+                print(f"Chunk {i+1}/{len(chunks)}: {chunk_tokens} tokens")
+                print(f"Preview: {chunk[:80]}{'...' if len(chunk) > 80 else ''}")
+                
+                chunk_audio, voice_info = self.process_single_chunk(
+                    chunk, MODEL_PATH, AUDIO_TOKENIZER_PATH, system_prompt,
+                    max_new_tokens, temperature, top_p, top_k, device,
+                    voice_preset, reference_audio, reference_text, audio_priority
+                )
+                audio_segments.append(chunk_audio)
+            
+            # Combine audio segments
+            print(f"Combining {len(audio_segments)} audio segments with {silence_between_chunks_ms}ms silence")
+            combined_audio = self.chunker.combine_audio_chunks(audio_segments, silence_between_chunks_ms)
+            
+            generation_time = time.time() - start_time
+            total_duration = combined_audio['waveform'].size(-1) / combined_audio['sample_rate']
+            avg_chunk_tokens = total_chunk_tokens // len(chunks)
+            
+            info = f"Generated {total_duration:.1f}s audio from {prompt_tokens} tokens using {len(chunks)} sentence-based chunks (avg {avg_chunk_tokens} tokens/chunk) in {generation_time:.2f}s"
+            
+            return (combined_audio, info)
     
     def _audio_to_base64(self, comfy_audio):
         """Convert ComfyUI audio format to base64 string."""
@@ -334,3 +513,20 @@ class HiggsAudio:
         
         audio_base64 = base64.b64encode(buffer.read()).decode('utf-8')
         return audio_base64
+
+
+NODE_CLASS_MAPPINGS = {
+    "LoadHiggsAudioModel": LoadHiggsAudioModel,
+    "LoadHiggsAudioTokenizer": LoadHiggsAudioTokenizer,
+    "LoadHiggsAudioSystemPrompt": LoadHiggsAudioSystemPrompt,
+    "LoadHiggsAudioPrompt": LoadHiggsAudioPrompt,
+    "HiggsAudio": HiggsAudio,
+}
+
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "LoadHiggsAudioModel": "Load HiggsAudio Model",
+    "LoadHiggsAudioTokenizer": "Load HiggsAudio Tokenizer",
+    "LoadHiggsAudioSystemPrompt": "Load HiggsAudio System Prompt",
+    "LoadHiggsAudioPrompt": "Load HiggsAudio Prompt",
+    "HiggsAudio": "HiggsAudio Text-to-Speech",
+}
