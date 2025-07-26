@@ -1,6 +1,6 @@
 # ComfyUI-HiggsAudio_Wrapper
 
-A comprehensive ComfyUI wrapper for HiggsAudio v2, enabling high-quality text-to-speech generation with advanced voice cloning capabilities.
+A comprehensive ComfyUI wrapper for HiggsAudio v2, enabling high-quality text-to-speech generation with advanced voice cloning capabilities with chunking enabled for unlimited length generation.
 
 <img width="2619" height="1468" alt="image" src="https://github.com/user-attachments/assets/7cfd3e77-3481-43cc-a821-fc28837fca29" />
 
