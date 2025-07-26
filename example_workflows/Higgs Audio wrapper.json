@@ -1,0 +1,356 @@
+{
+  "id": "641bd73e-9600-4ee3-8a38-d76411e3010d",
+  "revision": 0,
+  "last_node_id": 22,
+  "last_link_id": 19,
+  "nodes": [
+    {
+      "id": 6,
+      "type": "LoadHiggsAudioTokenizer",
+      "pos": [
+        -2870.298583984375,
+        -1014.2369384765625
+      ],
+      "size": [
+        274.2300720214844,
+        58
+      ],
+      "flags": {},
+      "order": 0,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO_TOKENIZER_PATH",
+          "type": "AUDIOTOKENIZER",
+          "links": [
+            1
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "Yuan-ManX/ComfyUI-HiggsAudio",
+        "ver": "26b8498766205cb32a70247856d1d9614bf3875c",
+        "Node name for S&R": "LoadHiggsAudioTokenizer",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "bosonai/higgs-audio-v2-tokenizer"
+      ]
+    },
+    {
+      "id": 9,
+      "type": "LoadAudio",
+      "pos": [
+        -3303.151611328125,
+        -933.4312133789062
+      ],
+      "size": [
+        270,
+        136
+      ],
+      "flags": {},
+      "order": 1,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "AUDIO",
+          "type": "AUDIO",
+          "links": [
+            7
+          ]
+        }
+      ],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45",
+        "Node name for S&R": "LoadAudio",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "David Attenborough.wav",
+        null,
+        null
+      ]
+    },
+    {
+      "id": 3,
+      "type": "LoadHiggsAudioModel",
+      "pos": [
+        -2866.068603515625,
+        -1142.366455078125
+      ],
+      "size": [
+        270,
+        58
+      ],
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "MODEL_PATH",
+          "type": "MODEL",
+          "links": [
+            15
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "Yuan-ManX/ComfyUI-HiggsAudio",
+        "ver": "26b8498766205cb32a70247856d1d9614bf3875c",
+        "Node name for S&R": "LoadHiggsAudioModel",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "bosonai/higgs-audio-v2-generation-3B-base"
+      ]
+    },
+    {
+      "id": 8,
+      "type": "PreviewAudio",
+      "pos": [
+        -1971.8485107421875,
+        -998.551513671875
+      ],
+      "size": [
+        270,
+        88
+      ],
+      "flags": {},
+      "order": 6,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "audio",
+          "type": "AUDIO",
+          "link": 4
+        }
+      ],
+      "outputs": [],
+      "properties": {
+        "cnr_id": "comfy-core",
+        "ver": "0.3.45",
+        "Node name for S&R": "PreviewAudio",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": []
+    },
+    {
+      "id": 4,
+      "type": "LoadHiggsAudioPrompt",
+      "pos": [
+        -2917.17333984375,
+        -569.2841796875
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 3,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "text",
+          "type": "STRING",
+          "links": [
+            19
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "Yuan-ManX/ComfyUI-HiggsAudio",
+        "ver": "26b8498766205cb32a70247856d1d9614bf3875c",
+        "Node name for S&R": "LoadHiggsAudioPrompt",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "The sun rises in the east and sets in the west. This simple fact has been observed by humans for thousands of years."
+      ]
+    },
+    {
+      "id": 7,
+      "type": "LoadHiggsAudioSystemPrompt",
+      "pos": [
+        -2920.37451171875,
+        -846.02197265625
+      ],
+      "size": [
+        400,
+        200
+      ],
+      "flags": {},
+      "order": 4,
+      "mode": 0,
+      "inputs": [],
+      "outputs": [
+        {
+          "name": "system_prompt",
+          "type": "SYSTEMPROMPT",
+          "links": [
+            3
+          ]
+        }
+      ],
+      "properties": {
+        "aux_id": "Yuan-ManX/ComfyUI-HiggsAudio",
+        "ver": "26b8498766205cb32a70247856d1d9614bf3875c",
+        "Node name for S&R": "LoadHiggsAudioSystemPrompt",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "Generate audio following instruction.\n\n<|scene_desc_start|>\nAudio is recorded from a quiet room.\n<|scene_desc_end|>"
+      ]
+    },
+    {
+      "id": 1,
+      "type": "HiggsAudio",
+      "pos": [
+        -2375.30908203125,
+        -999.3203735351562
+      ],
+      "size": [
+        338.4165954589844,
+        370
+      ],
+      "flags": {},
+      "order": 5,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "MODEL_PATH",
+          "type": "MODEL",
+          "link": 15
+        },
+        {
+          "name": "AUDIO_TOKENIZER_PATH",
+          "type": "AUDIOTOKENIZER",
+          "link": 1
+        },
+        {
+          "name": "system_prompt",
+          "type": "SYSTEMPROMPT",
+          "link": 3
+        },
+        {
+          "name": "reference_audio",
+          "shape": 7,
+          "type": "AUDIO",
+          "link": 7
+        },
+        {
+          "name": "prompt",
+          "type": "STRING",
+          "widget": {
+            "name": "prompt"
+          },
+          "link": 19
+        }
+      ],
+      "outputs": [
+        {
+          "name": "output",
+          "type": "AUDIO",
+          "links": [
+            4
+          ]
+        },
+        {
+          "name": "used_voice_info",
+          "type": "STRING",
+          "links": null
+        }
+      ],
+      "properties": {
+        "aux_id": "Yuan-ManX/ComfyUI-HiggsAudio",
+        "ver": "26b8498766205cb32a70247856d1d9614bf3875c",
+        "Node name for S&R": "HiggsAudio",
+        "widget_ue_connectable": {}
+      },
+      "widgets_values": [
+        "",
+        1024,
+        0.3,
+        0.95,
+        50,
+        "auto",
+        "vex",
+        "",
+        "auto"
+      ]
+    }
+  ],
+  "links": [
+    [
+      1,
+      6,
+      0,
+      1,
+      1,
+      "AUDIOTOKENIZER"
+    ],
+    [
+      3,
+      7,
+      0,
+      1,
+      2,
+      "SYSTEMPROMPT"
+    ],
+    [
+      4,
+      1,
+      0,
+      8,
+      0,
+      "AUDIO"
+    ],
+    [
+      7,
+      9,
+      0,
+      1,
+      3,
+      "AUDIO"
+    ],
+    [
+      15,
+      3,
+      0,
+      1,
+      0,
+      "MODEL"
+    ],
+    [
+      19,
+      4,
+      0,
+      1,
+      4,
+      "STRING"
+    ]
+  ],
+  "groups": [],
+  "config": {},
+  "extra": {
+    "ue_links": [],
+    "ds": {
+      "scale": 0.9646149645000006,
+      "offset": [
+        3543.7312477076584,
+        1211.4412099886172
+      ]
+    },
+    "links_added_by_ue": [],
+    "frontendVersion": "1.23.4",
+    "VHS_latentpreview": false,
+    "VHS_latentpreviewrate": 0,
+    "VHS_MetadataImage": true,
+    "VHS_KeepIntermediate": true
+  },
+  "version": 0.4
+}
