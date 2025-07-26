@@ -30,7 +30,7 @@ class HiggsAudioTextChunker:
         return len(text) // 4
     
     @staticmethod 
-    def split_into_sentences(text: str, max_tokens: int = 2000) -> List[str]:
+    def split_into_sentences(text: str, max_tokens: int = 1200) -> List[str]:
         """
         Split text into sentence-based chunks that fit within token limit.
         """
@@ -255,7 +255,7 @@ class HiggsAudio:
                 "AUDIO_TOKENIZER_PATH": ("AUDIOTOKENIZER",),
                 "system_prompt": ("SYSTEMPROMPT",),
                 "prompt": ("STRING",),
-                "max_new_tokens": ("INT", {"default": 1024, "min": 128, "max": 4096}),
+                "max_new_tokens": ("INT", {"default": 2048, "min": 128, "max": 4096}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
                 "top_p": ("FLOAT", {"default": 0.95, "min": 0.1, "max": 1.0, "step": 0.05}),
                 "top_k": ("INT", {"default": 50, "min": -1, "max": 100}),
