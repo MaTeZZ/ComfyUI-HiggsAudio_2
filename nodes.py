@@ -25,53 +25,29 @@ def load_voice_presets():
         voice_examples_dir = os.path.join(os.path.dirname(__file__), "voice_examples")
         config_path = os.path.join(voice_examples_dir, "config.json")
         
-        print(f"DEBUG: Looking for voice_examples in: {voice_examples_dir}")
-        print(f"DEBUG: Config path: {config_path}")
-        print(f"DEBUG: voice_examples dir exists: {os.path.exists(voice_examples_dir)}")
-        print(f"DEBUG: config.json exists: {os.path.exists(config_path)}")
-        
-        if os.path.exists(voice_examples_dir):
-            files_in_dir = os.listdir(voice_examples_dir)
-            print(f"DEBUG: Files in voice_examples: {files_in_dir}")
-        
         with open(config_path, "r", encoding="utf-8") as f:
             voice_dict = json.load(f)
-        
-        print(f"DEBUG: Loaded voice_dict keys: {list(voice_dict.keys())}")
         
         voice_presets = {}
         for k, v in voice_dict.items():
             voice_presets[k] = v["transcript"]
-            # Check if the corresponding .wav file exists
-            wav_path = os.path.join(voice_examples_dir, f"{k}.wav")
-            wav_exists = os.path.exists(wav_path)
-            print(f"DEBUG: Voice {k}: transcript length {len(v['transcript'])}, wav exists: {wav_exists}")
         
         voice_presets["voice_clone"] = "No reference voice (use custom audio)"
-        print(f"DEBUG: Final voice presets: {list(voice_presets.keys())}")
         return voice_presets, voice_dict
     except FileNotFoundError:
         print("ERROR: Voice examples config file not found. Using empty voice presets.")
         return {"voice_clone": "No reference voice (use custom audio)"}, {}
     except Exception as e:
         print(f"ERROR: Error loading voice presets: {e}")
-        import traceback
-        traceback.print_exc()
         return {"voice_clone": "No reference voice (use custom audio)"}, {}
 
 def get_voice_preset_path(voice_preset):
     """Get the voice path for a given voice preset."""
     if voice_preset == "voice_clone":
-        print(f"DEBUG: get_voice_preset_path called with 'voice_clone', returning None")
         return None
     
     voice_examples_dir = os.path.join(os.path.dirname(__file__), "voice_examples")
     voice_path = os.path.join(voice_examples_dir, f"{voice_preset}.wav")
-    
-    print(f"DEBUG: get_voice_preset_path for '{voice_preset}':")
-    print(f"DEBUG:   voice_examples_dir: {voice_examples_dir}")
-    print(f"DEBUG:   voice_path: {voice_path}")
-    print(f"DEBUG:   file exists: {os.path.exists(voice_path)}")
     
     if os.path.exists(voice_path):
         return voice_path
@@ -80,7 +56,6 @@ def get_voice_preset_path(voice_preset):
 # Load voice presets at module level
 try:
     VOICE_PRESETS, VOICE_DICT = load_voice_presets()
-    print(f"DEBUG: Voice presets loaded successfully: {list(VOICE_PRESETS.keys())}")
 except Exception as e:
     print(f"ERROR: Failed to load voice presets: {e}")
     VOICE_PRESETS, VOICE_DICT = {"voice_clone": "No reference voice (use custom audio)"}, {}
@@ -129,7 +104,7 @@ class LoadHiggsAudioSystemPrompt:
         return {
             "required": {
                 "text": ("STRING", {
-                    "default": "Generate audio following instruction.\n\n<|scene_desc_start|>\nAudio is recorded from a quiet room.\n<|scene_desc_end|>",
+                    "default": "Generate audio following instruction.",
                     "multiline": True
                 }),
             }
@@ -157,34 +132,13 @@ class LoadHiggsAudioPrompt:
             }
         }
 
-    RETURN_TYPES = ("PROMPT",)
-    RETURN_NAMES = ("prompt",)
+    RETURN_TYPES = ("STRING",)
+    RETURN_NAMES = ("text",)
     FUNCTION = "load_prompt"
     CATEGORY = "Higgs Audio"
 
     def load_prompt(self, text):
-        prompt = text
-        return (prompt,)
-
-class LoadHiggsAudioPrompt:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "text": ("STRING", {
-                    "default": "The sun rises in the east and sets in the west. This simple fact has been observed by humans for thousands of years.",
-                    "multiline": True
-                }),
-            }
-        }
-
-    RETURN_TYPES = ("STRING",)  # ✅ FIXED: Changed from ("PROMPT",) to ("STRING",)
-    RETURN_NAMES = ("text",)     # ✅ FIXED: Changed from ("prompt",) to ("text",) for clarity
-    FUNCTION = "load_prompt"
-    CATEGORY = "Higgs Audio"
-
-    def load_prompt(self, text):
-        return (text,)  # ✅ Return the text directly
+        return (text,)
 
 
 class HiggsAudio:
@@ -195,7 +149,7 @@ class HiggsAudio:
                 "MODEL_PATH": ("MODEL",),
                 "AUDIO_TOKENIZER_PATH": ("AUDIOTOKENIZER",),
                 "system_prompt": ("SYSTEMPROMPT",),
-                "prompt": ("STRING",),  # ✅ FIXED: Changed from ("PROMPT",) to ("STRING",)
+                "prompt": ("STRING",),
                 "max_new_tokens": ("INT", {"default": 1024, "min": 128, "max": 4096}),
                 "temperature": ("FLOAT", {"default": 1.0, "min": 0.0, "max": 2.0, "step": 0.1}),
                 "top_p": ("FLOAT", {"default": 0.95, "min": 0.1, "max": 1.0, "step": 0.05}),
