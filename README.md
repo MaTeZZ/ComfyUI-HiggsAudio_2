@@ -65,7 +65,7 @@ The wrapper includes several built-in voice presets:
 - `chadwick` - Male voice
 - `broom_salesman` - Character voice
 - `zh_man_sichuan` - Chinese male voice (Sichuan dialect)
-- `voice_clone` - Use custom reference audio
+- `voice_clone` - Use custom reference 30 sec audio
 
 #### Using Custom Reference Audio
 
@@ -219,10 +219,6 @@ See `requirements.txt` for complete list:
 - transformers>=4.45.1,<4.47.0
 - librosa
 - And others...
-
-## License
-
-[Add your license information here]
 
 ### Third-Party Licenses
 
