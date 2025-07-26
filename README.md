@@ -2,6 +2,9 @@
 
 A comprehensive ComfyUI wrapper for HiggsAudio v2, enabling high-quality text-to-speech generation with advanced voice cloning capabilities.
 
+<img width="2619" height="1468" alt="image" src="https://github.com/user-attachments/assets/7cfd3e77-3481-43cc-a821-fc28837fca29" />
+
+
 ## Features
 
 - **High-Quality Audio Generation**: Leverages the powerful HiggsAudio v2 3B parameter model
