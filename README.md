@@ -23,18 +23,17 @@ A comprehensive ComfyUI wrapper for HiggsAudio v2, enabling high-quality text-to
 - ComfyUI
 - CUDA-compatible GPU (recommended)
 
-### Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
 ### ComfyUI Installation
 
 1. Clone this repository into your ComfyUI `custom_nodes` directory:
 ```bash
 cd ComfyUI/custom_nodes
 git clone https://github.com/ShmuelRonen/ComfyUI-HiggsAudio_Wrapper.git
+```
+### Install Dependencies
+
+```bash
+pip install -r requirements.txt
 ```
 
 2. Restart ComfyUI
