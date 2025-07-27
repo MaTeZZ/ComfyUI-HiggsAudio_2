@@ -201,7 +201,7 @@ class HiggsAudio:
                 "reference_text": ("STRING", {"default": "", "multiline": True}),
                 "audio_priority": (["preset_dropdown", "reference_input", "auto", "force_preset"], {"default": "auto"}),
                 "enable_chunking": ("BOOLEAN", {"default": True}),
-                "max_tokens_per_chunk": ("INT", {"default": 350, "min": 300, "max": 4096, "step": 50}),
+                "max_tokens_per_chunk": ("INT", {"default": 350, "min": 200, "max": 4096, "step": 25}),
                 "silence_between_chunks_ms": ("INT", {"default": 100, "min": 0, "max": 2000, "step": 25}),
             }
         }
@@ -323,7 +323,7 @@ class HiggsAudio:
     def generate(self, MODEL_PATH, AUDIO_TOKENIZER_PATH, system_prompt, prompt, max_new_tokens, 
                  temperature, top_p, top_k, device, voice_preset="voice_clone", reference_audio=None, 
                  reference_text="", audio_priority="auto", enable_chunking=True, 
-                 max_tokens_per_chunk=1200, silence_between_chunks_ms=100):
+                 max_tokens_per_chunk=250, silence_between_chunks_ms=100):
 
         print("="*50)
         print(f"🚨 [HiggsAudioNode] Full prompt length: {len(prompt)} chars")
@@ -336,7 +336,7 @@ class HiggsAudio:
         except Exception as e:
             print(f"[DEBUG] Could not write DEBUG_higgs_prompt.txt ({e})")
         if enable_chunking is None: enable_chunking = True
-        if max_tokens_per_chunk is None or max_tokens_per_chunk < 350: max_tokens_per_chunk = 1200
+        if max_tokens_per_chunk is None or max_tokens_per_chunk < 200: max_tokens_per_chunk = 1200
         if silence_between_chunks_ms is None: silence_between_chunks_ms = 100
         start_time = time.time()
         prompt_tokens = self.chunker.count_tokens_approximate(prompt)
