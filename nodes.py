@@ -201,7 +201,7 @@ class HiggsAudio:
                 "reference_text": ("STRING", {"default": "", "multiline": True}),
                 "audio_priority": (["preset_dropdown", "reference_input", "auto", "force_preset"], {"default": "auto"}),
                 "enable_chunking": ("BOOLEAN", {"default": True}),
-                "max_tokens_per_chunk": ("INT", {"default": 350, "min": 200, "max": 4096, "step": 25}),
+                "max_tokens_per_chunk": ("INT", {"default": 225, "min": 200, "max": 4096, "step": 25}),
                 "silence_between_chunks_ms": ("INT", {"default": 100, "min": 0, "max": 2000, "step": 25}),
             }
         }
